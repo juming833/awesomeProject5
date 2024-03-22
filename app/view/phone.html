@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>手机号验证码登录</title>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+    }
+    h2 {
+      text-align: center;
+    }
+    form {
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+<form id="loginForm" action="/login" method="post">
+  <label for="phoneNumber">手机号码：</label>
+  <input type="tel" id="phoneNumber" name="phoneNumber" required><br><br>
+
+  <label for="verificationCode">验证码：</label>
+  <input type="text" id="verificationCode" name="verificationCode" required><br><br>
+
+  <input type="submit" value="登录">
+  <button type="button" id="sendCodeButton" onclick="sendVerificationCode()">发送验证码</button>
+
+  <p id="resultMessage"></p>
+</form>
+
+<script>
+  const sendCodeButton = document.getElementById('sendCodeButton');
+  const loginForm = document.getElementById('loginForm');
+  const resultMessage = document.getElementById('resultMessage');
+  function sendVerificationCode() {
+    const phoneNumberInput = document.getElementById('phoneNumber');
+    const phoneNumber = phoneNumberInput.value;
+
+    fetch(`/sms?phone_number=${phoneNumber}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    })
+            .then((response) => response.json())
+            .then((data) => {
+              if (data.error) {
+                resultMessage.innerText = data.error;
+              } else {
+                resultMessage.innerText = '验证码已发送，请注意查收';
+                sendCodeButton.disabled = true;
+                // 60秒后，重新启用发送按钮
+                setTimeout(() => {
+                  sendCodeButton.disabled = false;
+                  resultMessage.innerText = '';
+                }, 60000);
+              }
+            });
+  }
+
+  // 提交表单
+  loginForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+
+    const phoneNumberInput = document.getElementById('phoneNumber');
+    const verificationCodeInput = document.getElementById('verificationCode');
+    const phoneNumber = phoneNumberInput.value;
+    const verificationCode = verificationCodeInput.value;
+
+    // 向后端发送请求以验证验证码
+    fetch('/verifyCode2', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: `phoneNumber=${phoneNumber}&verificationCode=${verificationCode}`,
+    })
+            .then((response) => response.json())
+            .then((data) => {
+              if (data.error) {
+                resultMessage.innerText = data.error;
+              } else {
+                resultMessage.innerText = '登录成功';
+                setTimeout(() => {
+                  window.location.href = '/index';
+                }, 1000);
+              }
+            });
+  });
+</script>
+</body>
+</html>

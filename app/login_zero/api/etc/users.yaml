@@ -1,0 +1,13 @@
+Name: users
+Host: 0.0.0.0
+Port: 8888
+UserRpc:
+  Etcd:
+    Hosts:
+      - 127.0.0.1:2379
+    Key: user.rpc
+Auth:
+  AccessSecret: "caixukun"
+  AccessExpire: 3600
+Mysql:
+    DAtaSource: root:123456@tcp(127.0.0.1:3306)/zero_db?charset=utf8mb4&parseTime=True&loc=Local

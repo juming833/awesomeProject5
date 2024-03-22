@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>邮箱验证码登录</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        h2 {
+            text-align: center;
+        }
+        form {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+<form id="loginForm" action="/verify-code" method="post">
+    <label for="email">邮箱：</label>
+    <input type="email" id="email" name="email" required><br><br>
+
+    <label for="verificationCode">验证码：</label>
+    <input type="text" id="verificationCode" name="verificationCode" required><br><br>
+
+    <input type="submit" value="登录">
+    <button type="button" id="sendCodeButton" onclick="sendVerificationCode()">发送验证码</button>
+
+    <p id="resultMessage"></p>
+</form>
+
+<script>
+    const sendCodeButton = document.getElementById('sendCodeButton');
+    const loginForm = document.getElementById('loginForm');
+    const resultMessage = document.getElementById('resultMessage');
+
+    // 发送验证码
+    function sendVerificationCode() {
+        const emailInput = document.getElementById('email');
+        const email = emailInput.value;
+
+        // 向后端发送请求以发送验证码
+        fetch('/email', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `email=${email}`,
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.error) {
+                    resultMessage.innerText = data.error;
+                } else {
+                    resultMessage.innerText = '验证码已发送，请检查邮箱';
+                    sendCodeButton.disabled = true;
+                    // 60秒后，重新启用发送按钮
+                    setTimeout(() => {
+                        sendCodeButton.disabled = false;
+                        resultMessage.innerText = '';
+                    }, 60000);
+                }
+            });
+    }
+
+    // 提交表单
+    loginForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+
+        const emailInput = document.getElementById('email');
+        const verificationCodeInput = document.getElementById('verificationCode');
+
+        const email = emailInput.value;
+        const verificationCode = verificationCodeInput.value;
+
+        // 向后端发送请求以验证验证码
+        fetch('/verifyCode', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: `email=${email}&verificationCode=${verificationCode}`,
+        })
+            .then((response) => response.json())
+            .then((data) => {
+                if (data.error) {
+                    resultMessage.innerText = data.error;
+                } else {
+                    resultMessage.innerText = '登录成功';
+                    setTimeout(() => {
+                        window.location.href = '/index';
+                    }, 1000);
+                }
+            });
+    });
+</script>
+</body>
+</html>

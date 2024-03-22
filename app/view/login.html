@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>香香电子图书馆</title>
+    <script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+</head>
+<head>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
+
+        .main {
+            text-align: center;
+        }
+
+        .main div {
+            margin-bottom: 10px;
+        }
+
+    </style>
+</head>
+<body>
+<main class="main">
+    <div>
+        <label for="name">用户名:</label>
+        <input type="text" name="name" id="name" placeholder="Your name">
+    </div>
+    <div>
+        <label for="password">密码: </label>
+        <input type="password" name="password" id="password" placeholder="Password">
+    </div>
+    <div>
+        <input type="hidden" name="captcha_id" id="captcha_id">
+    </div>
+    <div>
+        <label for="captcha_value">验证码:</label>
+        <input type="text" name="captcha_value" id="captcha_value">
+    </div>
+    <div id="image-captcha"></div>
+    <div>
+        <button type="submit" id="login_por">用户登录</button>
+        <button type="submit" id="login_admin">管理员登录</button>
+        <button type="submit" id="login_sub">游客登录</button>
+        <button type="submit" id="login_captcha">邮箱登录</button>
+        <button type="submit" id="login_phone">手机号登录</button>
+        <button type="submit" id="login_zhu">注册</button>
+    </div>
+
+</main>
+</body>
+<script>
+    $(document).ready(function(){
+        loadCaptcha()
+        $("#login_sub").on("click", function() {
+            window.location.replace("/index"); // 点击游客登录按钮时跳转到首页
+        });
+        $("#login_admin").on("click", function() {
+            window.location.replace("/adminLogin"); // 点击游客登录按钮时跳转到首页
+        });
+        $("#login_por").on("click",function () {
+            $.ajax({
+                //请求资源路径
+                url:"/login",
+                //请求参数
+                data:{
+                    name:$("#name").val(),
+                    password:$("#password").val(),
+                    captcha_id:$("#captcha_id").val(),
+                    captcha_value:$("#captcha_value").val()
+                },
+                //请求方式
+                type:"post",
+                //数据形式
+                dataType:"json",
+                //请求成功后调用的回调函数
+                success:function (data) {
+                    console.log(data)
+
+                    if (data.code !== 0){
+                        alert(data.message)
+                    }else{
+                        alert("已登录")
+                       setTimeout("pageRedirect()", 3000);
+                    }
+                },
+                //请求失败后调用的回调函数
+                error:function () {
+                    alert("请求失败")
+                }
+            });
+        });
+    $("#login_zhu").on("click", function() {
+        window.location.replace("/create") // 点击注册按钮时跳转到注册界面
+    });
+        $("#login_captcha").on("click", function() {
+            window.location.replace("/email-login") // 点击验证码登录按钮时跳转到/email-login页面
+        });
+        $("#login_phone").on("click", function() {
+            window.location.replace("/phone-login")
+        });
+    $("#image-captcha").on("click",function (){
+        loadCaptcha()
+    })
+    });
+    function pageRedirect() {
+        window.location.replace("/index"); //实现跳转
+    }
+    function loadCaptcha(){
+        $.ajax({
+            url:"/captcha",
+            type:"get",
+            dataType:"json",
+            success:function (data) {
+                console.log(data)
+                var img = new Image();
+                $("#image-captcha").empty()
+                img.onload = function() {
+                    // 将图片添加到页面上
+                    $("#image-captcha").append(img);
+                };
+                img.src = data.data.data
+                $("#captcha_id").val(data.data.captcha_id)
+            },
+            error:function () {
+                alert("登录成功")
+            }
+        });
+    }
+</script>
+</body>
+</html>

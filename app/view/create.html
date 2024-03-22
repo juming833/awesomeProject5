@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>注册</title>
+  <style>
+  body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      margin: 0;
+      padding: 0;
+  }
+
+  form {
+      width: 300px;
+      padding: 20px;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      background-color: #f5f5f5;
+  }
+
+  h1 {
+      text-align: center;
+  }
+
+  label {
+      display: block;
+      margin-bottom: 10px;
+  }
+
+  input {
+      width: 100%;
+      padding: 5px;
+      margin-bottom: 10px;
+  }
+
+  button {
+      padding: 10px 20px;
+  }
+  </style>
+  <script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+</head>
+<body>
+
+<form id="userForm">
+  <div><h1>创建用户</h1></div>
+  <div>
+    <label for="username">用户名：</label>
+    <input type="text" id="username" name="username" required>
+  </div>
+  <div>
+  <label for="password">密码：</label>
+  <input type="password" id="password" name="password" required>
+</div>
+  <div>
+    <label for="password_2">确认密码：</label>
+    <input type="password" id="password_2" name="password" required>
+  </div>
+  <div>
+    <label for="phone">手机号：</label>
+    <input type="phone" id="phone" name="phone" required>
+  </div>
+  <div>
+    <button type="submit">创建</button>
+  </div>
+</form>
+
+<script>
+  $(document).ready(function() {
+    $("#userForm").on("submit", function(e) {
+      e.preventDefault(); // 阻止表单默认提交行为
+      var formData = {
+        username: $("#username").val(),
+        password: $("#password").val(),
+        password_2: $("#password_2").val(),
+        phone: $("#phone").val()
+      };
+
+      $.ajax({
+        url: "/create", // 替换为实际的后端接口地址
+        type: "POST",
+        data: JSON.stringify(formData),
+        contentType: "application/json; charset=utf-8",
+        dataType: "json",
+        success: function(response) {
+          alert("用户创建成功！");
+          // 执行其他操作或页面跳转
+          setTimeout("window.location.replace(\"/login\")",3000);
+        },
+        error: function(error) {
+          alert("用户创建失败：" + error.responseText);
+        }
+      });
+    });
+  });
+</script>
+</body>
+</html>

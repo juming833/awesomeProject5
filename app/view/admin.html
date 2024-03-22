@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>香香电子图书馆</title>
+  <script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+  <style>
+    body {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .main {
+      text-align: center;
+    }
+
+    .main div {
+      margin-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+<main class="main">
+  <div>
+    <label for="name">用户名:</label>
+    <input type="text" name="name" id="name" placeholder="Your name">
+  </div>
+  <div>
+    <label for="password">密码: </label>
+    <input type="password" name="password" id="password" placeholder="Password">
+  </div>
+  <div>
+    <button type="submit" id="login_por">登录</button>
+    <button type="submit" id="login_sub">游客登录</button>
+  </div>
+</main>
+
+<script>
+  $(document).ready(function(){
+    $("#login_sub").on("click", function() {
+      window.location.replace("/index"); // 点击游客登录按钮时跳转到首页
+    });
+    $("#login_por").on("click", function() {
+      $.ajax({
+        // 请求资源路径
+        url: "/adminLogin",
+        // 请求参数
+        data: {
+          name: $("#name").val(),
+          password: $("#password").val(),
+        },
+        // 请求方式
+        type: "post",
+        // 数据形式
+        dataType: "json",
+        // 请求成功后调用的回调函数
+        success: function (data) {
+          console.log(data);
+
+          if (data.code !== 0) {
+            alert(data.message);
+          } else {
+            alert("已登录");
+            setTimeout(pageRedirect, 3000);
+          }
+        },
+        // 请求失败后调用的回调函数
+        error: function () {
+          alert("请求失败");
+        }
+      });
+
+      function pageRedirect() {
+        window.location.replace("/index");
+      }
+    });
+  });
+</script>
+</body>
+</html>

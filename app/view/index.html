@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>香香电子图书馆</title>
+    <script src="https://apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+</head>
+<style>
+    .book-info {
+        display: flex;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+
+    .book-cover {
+        width: 100px;
+        height: 150px;
+        border: 1px solid #ccc;
+    }
+
+    .book-details {
+        margin-left: 10px;
+    }
+
+    .book-title {
+        margin-right: 10px;
+    }
+
+    .book-buttons {
+        display: flex;
+        flex-direction: column;
+        margin-top: 10px;
+    }
+
+    .book-buttons button {
+        margin-bottom: 5px;
+    }
+</style>
+<body>
+<main>
+    <h1>
+        图书详情
+    </h1>
+    <div id="book_info_table">
+
+    </div>
+    <div>
+        <button type="submit" id="logoutButton">退出登录</button>
+        <button id="nextButton">下一页</button>
+        <button id="prevButton">上一页</button>
+
+    </div>
+
+</main>
+
+<script>
+    $(document).ready(function () {
+        var currentPage = 1;
+        var limit = 5;
+
+        loadData();
+
+        function loadData() {
+            var offset = (currentPage - 1) * limit;
+
+            $.ajax({
+                url: "/books",
+                type: "GET",
+                data: {
+                    limit: limit,
+                    offset: offset
+                },
+                dataType: "json",
+                success: function (data) {
+                    console.log(data);
+                    $("#book_info_table").empty();
+
+                    for (const book_info of data.data) {
+                        const bookElement = $('<div>').addClass('book-info');
+                        const bookCover = $('<img>').attr('src', 'http://127.0.0.1:8080/cover?filename=' + book_info.img_url).addClass('book-cover');
+                        const bookDetails = $('<div>').addClass('book-details');
+                        const titleLink = $('<a>').attr('href', '#').addClass('ajax-trigger').attr('data', book_info.id).text(book_info.title).addClass('book-title');
+                        titleLink.click(function () {
+                            // 获取图书的详细信息
+                            getBookDetails(book_info.id);
+                        });
+                        const bookButtons = $('<div>').addClass('book-buttons');
+                        const borrowButton = $('<button>').addClass('borrow-button').attr('data', book_info.id).text('借书');
+                        const returnButton = $('<button>').addClass('return-button').attr('data', book_info.id).text('还书');
+                        const purchaseButton = $('<button>').addClass('purchase-button').attr('data', book_info.id).text('买书');
+                        bookButtons.append(borrowButton, returnButton,purchaseButton);
+                        bookDetails.append(titleLink, $('<br>'), borrowButton, $('<br>'), returnButton,$('<br>'), purchaseButton);
+                        bookElement.append(bookCover, bookDetails);
+                        $("#book_info_table").append(bookElement);
+                    }
+                    // 添加页面跳转输入框和按钮
+                    const pageInput = $('<input>').attr('type', 'number').attr('id', 'pageInput').attr('min', '1').val(currentPage);
+                    const goButton = $('<button>').attr('id', 'goButton').text('跳转');
+                    $("#book_info_table").append('跳转到第', pageInput, '页', goButton);
+                },
+                error: function () {
+                    alert("数据加载失败！");
+                }
+            });
+        }
+        function getBookDetails(bookId) {
+            $.ajax({
+                url: "/bookInfo",
+                type: "GET",
+                data: {
+                    id: bookId
+                },
+                dataType: "json",
+                success: function (data) {
+                    console.log(data);
+                    // 显示图书详细信息
+                    showBookDetails(data.data);
+
+                },
+                error: function () {
+                    alert("获取图书信息失败！");
+                }
+            });
+        }
+        function showBookDetails(bookInfo) {
+            $("#nextButton, #prevButton").hide();
+            // 创建用于展示图书详细信息的 HTML 元素
+            const bookDetailsElement = $('<div>').addClass('book-details');
+            const titleElement = $('<h2>').text(bookInfo.title);
+            const authorElement = $('<p>').text('作者: ' + bookInfo.author);
+            const author_introductionElement = $('<p>').text('作者简介: ' + bookInfo.author_introduction);
+            const brief_introductionElement = $('<p>').text('内容简介: ' + bookInfo.brief_introduction);
+            const publishingHouseElement = $('<p>').text('出版社: ' + bookInfo.publishing_house);
+            const publish_dateElement = $('<p>').text('出版时间: ' + bookInfo.publish_date);
+            const translatorElement = $('<p>').text('翻译: ' + bookInfo.translator);
+            const pagesElement = $('<p>').text('页数: ' + bookInfo.pages);
+            const ISBNElement = $('<p>').text('ISBN: ' + bookInfo.ISBN);
+            const countElement = $('<p>').text('库存: ' + bookInfo.count);
+            bookDetailsElement.append(titleElement, authorElement,author_introductionElement, brief_introductionElement,translatorElement,publishingHouseElement,publish_dateElement,countElement ,pagesElement,ISBNElement);
+            // 清空图书详情区域并添加新的图书详细信息
+            $("#book_info_table").empty().append(bookDetailsElement);
+        }
+        function pageRedirect() {
+            window.location.replace("/login"); // 实现跳转
+        }
+        function Redirect() {
+            window.location.replace("/pay"); // 实现跳转
+        }
+
+
+        $(document).on('click', '#logoutButton', function () {
+            $.ajax({
+                url: "/logout",
+                type: "GET",
+                success: function (data) {
+                    console.log(data);
+                    alert('退出登录成功');
+                    setTimeout(pageRedirect, 3000);
+                },
+                error: function () {
+                    alert('退出登录请求发送失败！');
+                }
+            });
+        });
+        $(document).on('click', '.borrow-button', function () {
+            var bookId = $(this).attr('data');
+            // 发送借书请求的逻辑
+            $.ajax({
+                url: "/borrow",
+                type: "POST",
+                data: {bookId: bookId},
+                success: function (data) {
+                    console.log(data);
+                },
+                error: function () {
+                }
+            });
+        });
+
+        $(document).on('click', '.return-button', function () {
+
+            var bookId = $(this).attr('data');
+            $.ajax({
+                url: "/return",
+                type: "POST",
+                data: {bookId: bookId},
+                success: function (data) {
+                    console.log(data);
+                },
+                error: function () {
+                }
+            });
+        });
+        // $(document).on('click', '.purchase-button', function () {
+        //
+        //     var id = $(this).attr('data');
+        //     $.ajax({
+        //         url: "/pay",
+        //         type: "GET",
+        //         data: {id: id},
+        //         success: function (data) {
+        //             console.log(data);
+        //             // setTimeout(Redirect, 0);
+        //         },
+        //         error: function () {
+        //         }
+        //     });
+        // });
+        document.addEventListener('click', function(event) {
+            if (event.target.classList.contains('purchase-button')) {
+                var id = event.target.getAttribute('data');
+
+                fetch('/pay?id=' + id, {
+                    method: 'GET',
+
+
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Access-Control-Allow-Origin': 'http://127.0.0.1:8080' // 设置允许的来源
+                    }
+                })
+                    .then(function(response) {
+                        // 处理响应
+                        if (response.ok) {
+                            return response.json();
+                        } else {
+                            throw new Error('Network response was not ok.');
+                        }
+                    })
+                    .then(function(data) {
+                        // 处理返回的数据
+                        console.log(data);
+                        setTimeout(Redirect, 1);
+                    })
+                    .catch(function(error) {
+                        // 处理错误
+                        console.log(error);
+                    });
+            }
+        });
+
+        $(document).on('click', '#nextButton', function () {
+            currentPage++;
+            loadData();
+        });
+
+        $(document).on('click', '#prevButton', function () {
+            if (currentPage > 1) {
+                currentPage--;
+                loadData();
+            }
+        });
+
+        $(document).on('click', '#goButton', function () {
+            var page = parseInt($('#pageInput').val());
+            if (page >= 1) {
+                currentPage = page;
+                loadData();
+            } else {
+                alert('请输入有效的页码！');
+            }
+        });
+    });
+</script>
+
+
+</body>
+</html>

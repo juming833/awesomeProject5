@@ -1,0 +1,33 @@
+syntax = "proto3";
+
+package user;
+option go_package = "./user";
+
+message UserInfoRequest {
+  int64 user_id = 1;
+}
+
+message UserInfoResponse {
+  int64 user_id = 1;
+  string username = 2;
+}
+
+
+message UserLoginRequest {
+  string username = 1;
+  string password = 2;
+
+}
+
+message UserLoginResponse {
+  int32 status_code = 1; // 状态码
+  string status_message = 2; // 状态消息
+}
+
+service Users {
+  rpc UserInfo(UserInfoRequest) returns(UserInfoResponse);
+  rpc UserLogin(UserLoginRequest) returns(UserLoginResponse);
+}
+
+
+// goctl rpc protoc user.proto --go_out=./types --go-grpc_out=./types --zrpc_out=.
