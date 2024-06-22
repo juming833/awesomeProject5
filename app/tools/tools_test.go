@@ -2,18 +2,13 @@ package tools
 
 import (
 	"fmt"
+	"github.com/spf13/viper"
 	"testing"
 )
 
 func TestGetUID(t *testing.T) {
-	id := GetUID()
-	fmt.Printf("id:%d\n", id)
-	id1 := GetUID()
-	fmt.Printf("id:%d\n", id1)
-	id2 := GetUID()
-	fmt.Printf("id:%d\n", id2)
-	id3 := GetUID()
-	fmt.Printf("id:%d\n", id3)
-	id4 := GetUID()
-	fmt.Printf("id:%d\n", id4)
+	appID := viper.GetString("AppID")
+	alipayPublicKey := viper.GetString("AlipayPublickey")
+	privateKey := viper.GetString("Privatekey")
+	fmt.Println(appID, alipayPublicKey, privateKey)
 }

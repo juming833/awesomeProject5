@@ -10,12 +10,11 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/smartwalle/alipay/v3"
-	"net/url"
-	"os"
-
-	//"github.com/uber/jaeger-client-go/crossdock/client"
+	"github.com/spf13/viper"
 	"go-code/awesomeProject1/app/model"
 	"net/http"
+	"net/url"
+	"os"
 	"sort"
 	"strconv"
 	"strings"
@@ -37,12 +36,18 @@ var client *alipay.Client
 
 const alipayPublicKeyPath = "./file/应用公钥RSA2048.txt"
 
+const (
+	appID           = viper.GetString("AppID")
+	alipayPublicKey = viper.GetString("AlipayPublickey")
+	privateKey      = viper.GetString("Privatekey")
+)
+
 func HandlePayment(c *gin.Context) {
 
 	config := &AlipayConfig{
-		AppID:           "9021000133605979",
-		AlipayPublicKey: "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAmQgoaBw/CPUbI4+FNSEGW5E6V5vBU2EZxjLo3Vw+GQmFq9fa/RSVKqcNqm/94jGpRjzIGGvaI+vkKEGFqxn0zR1c8skUCzLVwvCXLKM7bwBjVcxPssz25AqjPOff4naSsGe/KW85D9U33chRr01JTw863k4VQMAED3WKtKOfdmXKNrK31Uc/v41F4Vf9MBQ4YHBFxBMJJlaCVLY9j3MCrFBk/c/DkOqgMhWCRPesZOra07OuLRgvuW8SUKEQ0jGAOXh/wEOPAShsLCVz7kH5SaQvRM0Ajn8UmmvLJeLzCuicmqpBicEGNDZY/UUCk1jkGW88wY4ZUW8ZYj4bFmR9wQIDAQAB",
-		PrivateKey:      "MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCZCChoHD8I9Rsjj4U1IQZbkTpXm8FTYRnGMujdXD4ZCYWr19r9FJUqpw2qb/3iMalGPMgYa9oj6+QoQYWrGfTNHVzyyRQLMtXC8JcsoztvAGNVzE+yzPbkCqM859/idpKwZ78pbzkP1TfdyFGvTUlPDzreThVAwAQPdYq0o592Zco2srfVRz+/jUXhV/0wFDhgcEXEEwkmVoJUtj2PcwKsUGT9z8OQ6qAyFYJE96xk6trTs64tGC+5bxJQoRDSMYA5eH/AQ48BKGwsJXPuQflJpC9EzQCOfxSaa8sl4vMK6JyaqkGJwQY0Nlj9RQKTWOQZbzzBjhlRbxliPhsWZH3BAgMBAAECggEBAII1icQD/LKPc3cPgCVTo0g4Su8OTTG31ilpWfA3s3K0QnOUJ/XdFIsFN0CFJ/3ViZWE1DDLXAHijfCex7BtVnlMebDu3Momh/HlqovFnCV3rA3t2QZnFc+1KW4CUeIsR+YncGU+CMxq/K0N7Er/tNe7Ori6saS1fP72YX4QFveyk0YIU1mpf4XFHZPJcBtRznIX7RL2tHlUcUEWFuYKNVBhbbEkHHaEPNhkcZvNkQlRw0uB53y38sB/8A8K7WgSWDn6K4Fm8Wo4mRYpE45W10/YIoQqSJrn9TCCmznfn0PRkAbl7bx3ZbeQZwvmt06XRpmzG+a8FcCMs7/lc1kIqUECgYEA35gdbnqx8uiaqYw+Sjq6l2f5JKzkcDXNDcdULRcYpVHjz9EjWAtQZeuSur4UzjzopmA9jd8wl2zZ5phwueUQfOW1kGsuehTJYK1/kT1IiIjzJJJUu2OanyJh1IiDOrfuGINz/7g1zLg+BGXA2+sbkurds/2rHpyS6bBJp0A8KykCgYEArzYChQfMBbeC28FtGzMURWy7UQYyZYpKLBZ26Vd2rfA9IZsx2btSSrUzH5jGpgY+aBVJytQwmeY4xcnsYjS+Lf0SCtaQwEfq4Yo8DJcUgn5Dr5cXQdohzlmwj+ttqWy+RoQWw/ewTKo/+1NpdEcq8ZF3UVOiuTOCtrWixoGpqNkCgYBLIgxRwXzmSO8fpfaQbuegVNnNTyN76Tg8Nwy8EhTACKJqhLZBsZuUg/JMOe831hO/RHuqnqLvXy5hZDwM20INFgtKuhlmAHIiwGorXdJvvsUlNt6uESw16RHCnxSpuICTUCi8dyPs5MRCKgcCXyBm3/EbuFO195sOV6SIRPdy8QKBgEuqGWB1w4fcfiiE2adbYa+xixssf+sV035CnUubt+bZzqyKpvaOTLVylwdYJMFiBOVR/DIZfHuZzn6r+udWO6MEnRwNGSnQZQDNf604OWU5PeXAbAzGNL82QGeGli8KhQlS1bn/ZyVUiJjypqHOch8sYMjAQ4+TTSm2Ovta13fRAoGBAMQS7uQpEzigHrKxSpb1Fua1arF2xLPPnW2JzUuqCi76ahqeSp8liCwKL1Zu8znozi+dpOgbc6DzkSSAVgzD+iSehAINgPDUj9290WG5RuBbGUJKezX/mnk7b9yfUj7NPzsaV2668+HewmZvBhCRmHli83rDleDT5sbmMn2OQeW3",
+		AppID:           appID,
+		AlipayPublicKey: alipayPublicKey,
+		PrivateKey:      privateKey,
 	}
 	// 创建支付宝客户端
 	client, err := alipay.New(config.AppID, config.PrivateKey, false)
@@ -89,8 +94,7 @@ func HandlePayment(c *gin.Context) {
 
 }
 func CloseOrder(orderNo string) {
-	client, _ := alipay.New("9021000133605979", "MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCZCChoHD8I9Rsjj4U1IQZbkTpXm8FTYRnGMujdXD4ZCYWr19r9FJUqpw2qb/3iMalGPMgYa9oj6+QoQYWrGfTNHVzyyRQLMtXC8JcsoztvAGNVzE+yzPbkCqM859/idpKwZ78pbzkP1TfdyFGvTUlPDzreThVAwAQPdYq0o592Zco2srfVRz+/jUXhV/0wFDhgcEXEEwkmVoJUtj2PcwKsUGT9z8OQ6qAyFYJE96xk6trTs64tGC+5bxJQoRDSMYA5eH/AQ48BKGwsJXPuQflJpC9EzQCOfxSaa8sl4vMK6JyaqkGJwQY0Nlj9RQKTWOQZbzzBjhlRbxliPhsWZH3BAgMBAAECggEBAII1icQD/LKPc3cPgCVTo0g4Su8OTTG31ilpWfA3s3K0QnOUJ/XdFIsFN0CFJ/3ViZWE1DDLXAHijfCex7BtVnlMebDu3Momh/HlqovFnCV3rA3t2QZnFc+1KW4CUeIsR+YncGU+CMxq/K0N7Er/tNe7Ori6saS1fP72YX4QFveyk0YIU1mpf4XFHZPJcBtRznIX7RL2tHlUcUEWFuYKNVBhbbEkHHaEPNhkcZvNkQlRw0uB53y38sB/8A8K7WgSWDn6K4Fm8Wo4mRYpE45W10/YIoQqSJrn9TCCmznfn0PRkAbl7bx3ZbeQZwvmt06XRpmzG+a8FcCMs7/lc1kIqUECgYEA35gdbnqx8uiaqYw+Sjq6l2f5JKzkcDXNDcdULRcYpVHjz9EjWAtQZeuSur4UzjzopmA9jd8wl2zZ5phwueUQfOW1kGsuehTJYK1/kT1IiIjzJJJUu2OanyJh1IiDOrfuGINz/7g1zLg+BGXA2+sbkurds/2rHpyS6bBJp0A8KykCgYEArzYChQfMBbeC28FtGzMURWy7UQYyZYpKLBZ26Vd2rfA9IZsx2btSSrUzH5jGpgY+aBVJytQwmeY4xcnsYjS+Lf0SCtaQwEfq4Yo8DJcUgn5Dr5cXQdohzlmwj+ttqWy+RoQWw/ewTKo/+1NpdEcq8ZF3UVOiuTOCtrWixoGpqNkCgYBLIgxRwXzmSO8fpfaQbuegVNnNTyN76Tg8Nwy8EhTACKJqhLZBsZuUg/JMOe831hO/RHuqnqLvXy5hZDwM20INFgtKuhlmAHIiwGorXdJvvsUlNt6uESw16RHCnxSpuICTUCi8dyPs5MRCKgcCXyBm3/EbuFO195sOV6SIRPdy8QKBgEuqGWB1w4fcfiiE2adbYa+xixssf+sV035CnUubt+bZzqyKpvaOTLVylwdYJMFiBOVR/DIZfHuZzn6r+udWO6MEnRwNGSnQZQDNf604OWU5PeXAbAzGNL82QGeGli8KhQlS1bn/ZyVUiJjypqHOch8sYMjAQ4+TTSm2Ovta13fRAoGBAMQS7uQpEzigHrKxSpb1Fua1arF2xLPPnW2JzUuqCi76ahqeSp8liCwKL1Zu8znozi+dpOgbc6DzkSSAVgzD+iSehAINgPDUj9290WG5RuBbGUJKezX/mnk7b9yfUj7NPzsaV2668+HewmZvBhCRmHli83rDleDT5sbmMn2OQeW3", false)
-	//创建交易关闭请求参数
+	client, _ := alipay.New(appID, privateKey, false) //创建交易关闭请求参数
 	closeReq := alipay.TradeClose{
 		OutTradeNo: orderNo, // 要查询的订单号
 	}
@@ -124,9 +128,9 @@ func HandleCallback(c *gin.Context) {
 	for key, values := range c.Request.Form {
 		params[key] = values[0]
 	}
-	publicKey := "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAmQgoaBw/CPUbI4+FNSEGW5E6V5vBU2EZxjLo3Vw+GQmFq9fa/RSVKqcNqm/94jGpRjzIGGvaI+vkKEGFqxn0zR1c8skUCzLVwvCXLKM7bwBjVcxPssz25AqjPOff4naSsGe/KW85D9U33chRr01JTw863k4VQMAED3WKtKOfdmXKNrK31Uc/v41F4Vf9MBQ4YHBFxBMJJlaCVLY9j3MCrFBk/c/DkOqgMhWCRPesZOra07OuLRgvuW8SUKEQ0jGAOXh/wEOPAShsLCVz7kH5SaQvRM0Ajn8UmmvLJeLzCuicmqpBicEGNDZY/UUCk1jkGW88wY4ZUW8ZYj4bFmR9wQIDAQAB"
+
 	// 验证签名
-	if VerifySign(params, publicKey) {
+	if VerifySign(params, alipayPublicKey) {
 		// 签名验证通过，处理业务逻辑
 		// TODO: 在这里写下你的业务逻辑代码
 
@@ -202,10 +206,9 @@ func Verify(signStr, sign, publicKey string) bool {
 }
 
 func HandleRefund(c *gin.Context) {
-	client, _ := alipay.New("9021000133605979", "MIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQCZCChoHD8I9Rsjj4U1IQZbkTpXm8FTYRnGMujdXD4ZCYWr19r9FJUqpw2qb/3iMalGPMgYa9oj6+QoQYWrGfTNHVzyyRQLMtXC8JcsoztvAGNVzE+yzPbkCqM859/idpKwZ78pbzkP1TfdyFGvTUlPDzreThVAwAQPdYq0o592Zco2srfVRz+/jUXhV/0wFDhgcEXEEwkmVoJUtj2PcwKsUGT9z8OQ6qAyFYJE96xk6trTs64tGC+5bxJQoRDSMYA5eH/AQ48BKGwsJXPuQflJpC9EzQCOfxSaa8sl4vMK6JyaqkGJwQY0Nlj9RQKTWOQZbzzBjhlRbxliPhsWZH3BAgMBAAECggEBAII1icQD/LKPc3cPgCVTo0g4Su8OTTG31ilpWfA3s3K0QnOUJ/XdFIsFN0CFJ/3ViZWE1DDLXAHijfCex7BtVnlMebDu3Momh/HlqovFnCV3rA3t2QZnFc+1KW4CUeIsR+YncGU+CMxq/K0N7Er/tNe7Ori6saS1fP72YX4QFveyk0YIU1mpf4XFHZPJcBtRznIX7RL2tHlUcUEWFuYKNVBhbbEkHHaEPNhkcZvNkQlRw0uB53y38sB/8A8K7WgSWDn6K4Fm8Wo4mRYpE45W10/YIoQqSJrn9TCCmznfn0PRkAbl7bx3ZbeQZwvmt06XRpmzG+a8FcCMs7/lc1kIqUECgYEA35gdbnqx8uiaqYw+Sjq6l2f5JKzkcDXNDcdULRcYpVHjz9EjWAtQZeuSur4UzjzopmA9jd8wl2zZ5phwueUQfOW1kGsuehTJYK1/kT1IiIjzJJJUu2OanyJh1IiDOrfuGINz/7g1zLg+BGXA2+sbkurds/2rHpyS6bBJp0A8KykCgYEArzYChQfMBbeC28FtGzMURWy7UQYyZYpKLBZ26Vd2rfA9IZsx2btSSrUzH5jGpgY+aBVJytQwmeY4xcnsYjS+Lf0SCtaQwEfq4Yo8DJcUgn5Dr5cXQdohzlmwj+ttqWy+RoQWw/ewTKo/+1NpdEcq8ZF3UVOiuTOCtrWixoGpqNkCgYBLIgxRwXzmSO8fpfaQbuegVNnNTyN76Tg8Nwy8EhTACKJqhLZBsZuUg/JMOe831hO/RHuqnqLvXy5hZDwM20INFgtKuhlmAHIiwGorXdJvvsUlNt6uESw16RHCnxSpuICTUCi8dyPs5MRCKgcCXyBm3/EbuFO195sOV6SIRPdy8QKBgEuqGWB1w4fcfiiE2adbYa+xixssf+sV035CnUubt+bZzqyKpvaOTLVylwdYJMFiBOVR/DIZfHuZzn6r+udWO6MEnRwNGSnQZQDNf604OWU5PeXAbAzGNL82QGeGli8KhQlS1bn/ZyVUiJjypqHOch8sYMjAQ4+TTSm2Ovta13fRAoGBAMQS7uQpEzigHrKxSpb1Fua1arF2xLPPnW2JzUuqCi76ahqeSp8liCwKL1Zu8znozi+dpOgbc6DzkSSAVgzD+iSehAINgPDUj9290WG5RuBbGUJKezX/mnk7b9yfUj7NPzsaV2668+HewmZvBhCRmHli83rDleDT5sbmMn2OQeW3", false)
-	publicKey := "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAmQgoaBw/CPUbI4+FNSEGW5E6V5vBU2EZxjLo3Vw+GQmFq9fa/RSVKqcNqm/94jGpRjzIGGvaI+vkKEGFqxn0zR1c8skUCzLVwvCXLKM7bwBjVcxPssz25AqjPOff4naSsGe/KW85D9U33chRr01JTw863k4VQMAED3WKtKOfdmXKNrK31Uc/v41F4Vf9MBQ4YHBFxBMJJlaCVLY9j3MCrFBk/c/DkOqgMhWCRPesZOra07OuLRgvuW8SUKEQ0jGAOXh/wEOPAShsLCVz7kH5SaQvRM0Ajn8UmmvLJeLzCuicmqpBicEGNDZY/UUCk1jkGW88wY4ZUW8ZYj4bFmR9wQIDAQAB"
+	client, _ := alipay.New(appID, privateKey, false)
 	//err := LoadAliPayPublicKey(publicKey)
-	client.LoadAliPayPublicKey(publicKey)
+	client.LoadAliPayPublicKey(alipayPublicKey)
 	if err := verifyAlipaySignature(c); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid signature"})
 		return

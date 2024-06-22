@@ -40,7 +40,7 @@ var DB *mongo.Client
 
 func NewMongoDB() {
 	// 创建MongoDB客户端
-	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI("mongodb://192.168.10.16:27017"))
+	client, err := mongo.Connect(context.TODO(), options.Client().ApplyURI("mongodb://192.168.30.56:27017"))
 	if err != nil {
 		fmt.Println("无法连接到MongoDB:", err)
 		return

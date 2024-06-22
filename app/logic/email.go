@@ -3,6 +3,7 @@ package logic
 import (
 	"crypto/tls"
 	"fmt"
+	"github.com/spf13/viper"
 	"go-code/awesomeProject1/app/model"
 	"log"
 	"math/rand"
@@ -20,8 +21,8 @@ func Email(context *gin.Context) {
 	smtpPort := 587
 
 	// 发件人的认证信息
-	senderEmail := "1738353843@qq.com"
-	senderPassword := "ugpgqhngcgzrdgig"
+	senderEmail := viper.GetString("senderEmail")
+	senderPassword := viper.GetString("senderPassword")
 
 	// 收件人的地址z
 	recipientEmail, _ := context.GetPostForm("email")

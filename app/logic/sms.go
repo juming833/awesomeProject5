@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/aliyun/alibaba-cloud-sdk-go/services/dysmsapi"
 	"github.com/gin-gonic/gin"
+	"github.com/spf13/viper"
 	"go-code/awesomeProject1/app/model"
 	"math/rand"
 	"net/http"
@@ -21,10 +22,10 @@ func SendSms(c *gin.Context) {
 	model.Rdb.Set(c, "verification_code", code, 60*time.Second)
 
 	// 阿里云短信API的相关配置信息
-	accessKeyId := "LTAI5t6GvbKJCGPjZV58Nq2p"
-	accessSecret := "6jXChqRCYy9rXFXO3J2W6fZZhp4vHu"
+	accessKeyId := viper.GetString("accessKeyId")
+	accessSecret := viper.GetString("accessSecret")
 	signName := "阿里云短信测试"
-	templateCode := "SMS_154950909"
+	templateCode := viper.GetString("templateCode")
 
 	// 创建短信客户端
 	client, err := dysmsapi.NewClientWithAccessKey("cn-hangzhou", accessKeyId, accessSecret)

@@ -23,6 +23,6 @@ func CreateUser(user *User) error {
 		fmt.Printf("err:%s", err.Error())
 		return err
 	}
-	
+
 	return nil
 }
